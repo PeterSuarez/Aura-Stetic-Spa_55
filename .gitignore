@@ -1,0 +1,23 @@
+
+# Dependencias
+node_modules/
+api/node_modules/
+movil/node_modules/
+web/node_modules/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+api/.env
+movil/.env
+web/.env
+
+# Archivos de compilación
+dist/
+build/
+.expo/
+
+# Archivos temporales
+*.log
