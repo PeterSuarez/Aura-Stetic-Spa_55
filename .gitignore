@@ -21,3 +21,11 @@ build/
 
 # Archivos temporales
 *.log
+
+# Bases de datos locales (SQLite): no se suben al repositorio
+*.db
+*.db-shm
+*.db-wal
+
+# Angular
+.angular/

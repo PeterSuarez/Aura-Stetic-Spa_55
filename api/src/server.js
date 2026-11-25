@@ -16,9 +16,12 @@ async function iniciarServidor() {
   .map((red) => red.address);
 
  app.listen(PUERTO, () => {
-  console.log(`API disponible en http://localhost:${PUERTO}/api/reservas`);
-  for (const ip of ipsLocales()) {
-   console.log(`Desde el celular: http://${ip}:${PUERTO}/api/reservas`);
+  console.log(`API disponible en el puerto ${PUERTO} (/api/reservas)`);
+  // En la nube (producción) no tiene sentido mostrar la IP de la red local.
+  if (process.env.NODE_ENV !== 'production') {
+   for (const ip of ipsLocales()) {
+    console.log(`Desde el celular: http://${ip}:${PUERTO}/api/reservas`);
+   }
   }
  });
 }

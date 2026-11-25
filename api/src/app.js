@@ -106,8 +106,9 @@ app.put('/api/reservas/:id/estado', async (req, res) => {
     return res.status(500).json({ errores: ['No se pudo cambiar el estado.'] });
   }
 });
-app.get('/api/salud', (req, res) => {
-  res.status(200).json({ estado: 'ok' });
+// GET /api/salud → Render comprueba que la API está activa (Health Check Path)
+app.get('/api/salud', (_req, res) => {
+  res.status(200).json({ estado: 'ok', version: '1.1' });
 });
 
 module.exports = app;

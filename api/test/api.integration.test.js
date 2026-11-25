@@ -119,3 +119,9 @@ test('DELETE elimina la reserva y responde 204', async () => {
   const reservas = await (await fetch(url)).json();
   assert.equal(reservas.length, 0);
 });
+test('GET /api/salud responde 200 con estado ok', async () => {
+  const respuesta = await fetch(url.replace('/reservas', '/salud'));
+  assert.equal(respuesta.status, 200);
+  const cuerpo = await respuesta.json();
+  assert.equal(cuerpo.estado, 'ok');
+});
