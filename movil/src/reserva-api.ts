@@ -30,7 +30,7 @@ export interface NuevaReserva {
 @Injectable({ providedIn: 'root' })
 export class ReservaApi {
   private readonly http = inject(HttpClient);
-  private readonly url = 'http://localhost:3000/api/reservas';
+  private readonly url = 'https://aura-stetic-spa-55.onrender.com/api/reservas';
 
   listar() {
     return this.http.get<Reserva[]>(this.url);
