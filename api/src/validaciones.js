@@ -2,6 +2,7 @@
 const PATRON_TELEFONO = /^0\d{9}$/;              // 10 dígitos, inicia con 0
 const PATRON_FECHA = /^\d{4}-\d{2}-\d{2}$/;      // AAAA-MM-DD
 const PATRON_HORA = /^([01]\d|2[0-3]):[0-5]\d$/; // HH:MM (00:00 a 23:59)
+const HORARIOS = ['08:00','09:00','10:00','11:00','12:00','14:00','15:00','16:00','17:00'];
 
 // Devuelve la fecha local de hoy como AAAA-MM-DD.
 function fechaDeHoy(hoy) {
@@ -27,6 +28,7 @@ function validarReserva(reserva = {}, hoy = new Date()) {
     fecha: String(reserva.fecha ?? '').trim(),
     hora: String(reserva.hora ?? '').trim(),
     notas: String(reserva.notas ?? '').trim(),
+    comprobante: String(reserva.comprobante ?? '').trim(),
   };
   const errores = [];
 
@@ -44,8 +46,14 @@ function validarReserva(reserva = {}, hoy = new Date()) {
   } else if (datos.fecha && datos.fecha < fechaDeHoy(hoy)) {
     errores.push('La fecha no puede estar en el pasado.');
   }
-  if (datos.hora && !PATRON_HORA.test(datos.hora)) {
-    errores.push('La hora no es válida.');
+  if (!datos.fecha) {
+    errores.push('Debe elegir una fecha.');
+  }
+  if (!HORARIOS.includes(datos.hora)) {
+    errores.push('Debe elegir uno de los horarios disponibles.');
+  }
+  if (!datos.comprobante) {
+    errores.push('Debe adjuntar el comprobante de pago.');
   }
   if (datos.notas.length > 200) {
     errores.push('Las notas no pueden superar los 200 caracteres.');

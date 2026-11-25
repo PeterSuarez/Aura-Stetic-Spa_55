@@ -18,6 +18,7 @@ npm start o npm run dev
 cd web
 ng serve
 
+
 Después de ejecutar ng serve tiene que dar por ejemplo un link como http://localhost:4200/ ese link copiarlo y pegarlo en el buscador siempre va a ejecutar en el puerto 4200
 
 # Paso 3 en otro terminal ejecutar los comandos y no se debe cerrar

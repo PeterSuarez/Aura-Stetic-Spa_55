@@ -1,4 +1,6 @@
-export type Pestana = 'catalogo' | 'reservar' | 'citas';
+export type Pestana = 'catalogo' | 'reservar' | 'citas' | 'login';
+
+export type RolSesion = 'cliente' | 'administrador';
 
 export type EstadoReserva =
   | 'pendiente'
@@ -14,6 +16,7 @@ export type Reserva = {
   fecha: string | null;
   hora: string | null;
   notas: string | null;
+  comprobante: string | null;
   estado: EstadoReserva;
 };
 
@@ -32,4 +35,5 @@ export type Formulario = {
   fecha: string;
   hora: string;
   notas: string;
+  comprobante: string;
 };

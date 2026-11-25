@@ -17,6 +17,7 @@ import { fechaBonita, fechaDesdeTexto, fechaHoy, horaBonita } from './src/fechas
 import { CatalogoScreen } from './src/screens/CatalogoScreen';
 import { CitasScreen } from './src/screens/CitasScreen';
 import { ReservarScreen } from './src/screens/ReservarScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
 import {
   crearErrorRespuesta,
   ErrorApi,
@@ -27,6 +28,7 @@ import type {
   Formulario,
   Pestana,
   Reserva,
+  RolSesion,
 } from './src/types';
 
 const URL_CONFIGURADA = process.env.EXPO_PUBLIC_API_URL?.trim();
@@ -40,6 +42,9 @@ const API_URL = URL_CONFIGURADA
 
 export default function App() {
   const [pestana, setPestana] = useState<Pestana>('catalogo');
+  const [sesionActiva, setSesionActiva] = useState(false);
+  const [rolSesion, setRolSesion] = useState<RolSesion>('cliente');
+  const [telefonoCliente, setTelefonoCliente] = useState('');
   const [formulario, setFormulario] = useState<Formulario>({
     nombre: '',
     telefono: '',
@@ -47,6 +52,7 @@ export default function App() {
     fecha: '',
     hora: '',
     notas: '',
+    comprobante: '',
   });
   const [mostrarServicios, setMostrarServicios] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -56,6 +62,7 @@ export default function App() {
   const [filtroEstado, setFiltroEstado] = useState<EstadoReserva | 'todas'>('todas');
   const [cargandoCitas, setCargandoCitas] = useState(false);
   const [errorCitas, setErrorCitas] = useState('');
+  const [horariosOcupados, setHorariosOcupados] = useState<string[]>([]);
 
   const minimo = fechaHoy();
 
@@ -74,6 +81,31 @@ export default function App() {
 
   const cambiar = (campo: keyof Formulario, valor: string) => {
     setFormulario((actual) => ({ ...actual, [campo]: valor }));
+    if (campo === 'fecha') {
+      setFormulario((actual) => ({ ...actual, hora: '' }));
+      void cargarHorariosDisponibles(valor);
+    }
+  };
+
+  const cargarHorariosDisponibles = async (fecha: string) => {
+    if (!fechaDesdeTexto(fecha)) {
+      setHorariosOcupados([]);
+      return;
+    }
+    try {
+      const respuesta = await fetch(
+        `${API_URL}/disponibilidad?fecha=${encodeURIComponent(fecha)}`,
+      );
+      const contenido = await respuesta.json().catch(() => null);
+      if (!respuesta.ok) throw new Error('No se pudo consultar la disponibilidad.');
+      setHorariosOcupados(Array.isArray(contenido?.ocupados) ? contenido.ocupados : []);
+    } catch {
+      setHorariosOcupados([]);
+      Alert.alert(
+        'Disponibilidad no confirmada',
+        'No se pudo verificar los horarios. Intenta nuevamente antes de enviar.',
+      );
+    }
   };
 
   const cargarCitas = async () => {
@@ -107,8 +139,43 @@ export default function App() {
   };
 
   const abrirPestana = (siguiente: Pestana) => {
+    if (siguiente === 'citas' && !sesionActiva) {
+      setPestana('login');
+      return;
+    }
     setPestana(siguiente);
     if (siguiente === 'citas') void cargarCitas();
+  };
+
+  const iniciarSesion = (
+    rol: RolSesion,
+    usuario: string,
+    contraseña: string,
+  ) => {
+    if (rol === 'administrador') {
+      if (usuario !== 'admin' || contraseña !== 'aura2026') return false;
+      setRolSesion('administrador');
+      setTelefonoCliente('');
+      setSesionActiva(true);
+      setPestana('citas');
+      void cargarCitas();
+      return true;
+    }
+
+    if (!/^0\d{9}$/.test(usuario)) return false;
+    setRolSesion('cliente');
+    setTelefonoCliente(usuario);
+    setSesionActiva(true);
+    setPestana('citas');
+    void cargarCitas();
+    return true;
+  };
+
+  const cerrarSesion = () => {
+    setSesionActiva(false);
+    setRolSesion('cliente');
+    setTelefonoCliente('');
+    setPestana('catalogo');
   };
 
   const reservarServicio = (servicio: string) => {
@@ -198,7 +265,9 @@ export default function App() {
     if (!formulario.servicio) return 'Por favor elige un tratamiento.';
     if (!fechaDesdeTexto(formulario.fecha)) return 'Elige una fecha válida.';
     if (formulario.fecha < minimo) return 'La fecha no puede estar en el pasado.';
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(formulario.hora)) return 'Elige una hora válida.';
+    if (!['08:00','09:00','10:00','11:00','12:00','14:00','15:00','16:00','17:00'].includes(formulario.hora)) return 'Elige una hora disponible.';
+    if (horariosOcupados.includes(formulario.hora)) return 'Ese horario acaba de ser ocupado. Elige otro.';
+    if (!formulario.comprobante) return 'Adjunta el comprobante de pago.';
     if (formulario.notas.length > 200) return 'Las notas no pueden superar los 200 caracteres.';
     return null;
   };
@@ -222,6 +291,7 @@ export default function App() {
           fecha: formulario.fecha,
           hora: formulario.hora,
           notas: formulario.notas.trim(),
+          comprobante: formulario.comprobante,
         }),
       });
       const contenido = await respuesta.json().catch(() => null);
@@ -247,7 +317,8 @@ export default function App() {
           },
         ],
       );
-      setFormulario({ nombre: '', telefono: '', servicio: '', fecha: '', hora: '', notas: '' });
+      setFormulario({ nombre: '', telefono: '', servicio: '', fecha: '', hora: '', notas: '', comprobante: '' });
+      setHorariosOcupados([]);
     } catch (e) {
       const detalle = mensajeErrorConexion(e);
       const estado = e instanceof ErrorApi ? e.status : 0;
@@ -268,9 +339,13 @@ export default function App() {
     }
   };
 
-  const citasVisibles = filtroEstado === 'todas'
+  const citasDelRol = rolSesion === 'administrador'
     ? citas
-    : citas.filter((cita) => (cita.estado || 'pendiente') === filtroEstado);
+    : citas.filter((cita) => cita.telefono === telefonoCliente);
+
+  const citasVisibles = filtroEstado === 'todas'
+    ? citasDelRol
+    : citasDelRol.filter((cita) => (cita.estado || 'pendiente') === filtroEstado);
 
   return (
     <SafeAreaProvider>
@@ -294,7 +369,7 @@ export default function App() {
             ) : pestana === 'citas' ? (
               <CitasScreen
                 styles={styles}
-                citas={citas}
+                citas={citasDelRol}
                 citasVisibles={citasVisibles}
                 filtroEstado={filtroEstado}
                 cargandoCitas={cargandoCitas}
@@ -303,6 +378,13 @@ export default function App() {
                 onCargar={() => void cargarCitas()}
                 onCambiarEstado={(cita, estado) => void cambiarEstadoCita(cita, estado)}
                 onEliminar={(cita) => void eliminarCita(cita)}
+                onCerrarSesion={cerrarSesion}
+                soloLectura={rolSesion === 'cliente'}
+              />
+            ) : pestana === 'login' ? (
+              <LoginScreen
+                onIniciarSesion={iniciarSesion}
+                onCancelar={() => setPestana('catalogo')}
               />
             ) : (
               <ReservarScreen
@@ -318,6 +400,7 @@ export default function App() {
                 onMostrarServicios={setMostrarServicios}
                 onMostrarFecha={setMostrarFecha}
                 onMostrarHora={setMostrarHora}
+                horariosOcupados={horariosOcupados}
                 onEnviar={() => void enviar()}
               />
             )}

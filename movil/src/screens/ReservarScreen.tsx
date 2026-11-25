@@ -2,14 +2,14 @@ import DateTimePicker, {
   DateTimePickerAndroid,
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SERVICIOS } from '../datos';
+import * as ImagePicker from 'expo-image-picker';
+import { Alert, Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { HORARIOS, SERVICIOS } from '../datos';
 import {
   fechaBonita,
   fechaDesdeTexto,
   horaBonita,
   textoFecha,
-  textoHora,
 } from '../fechas';
 import type { Formulario } from '../types';
 
@@ -22,6 +22,7 @@ type Props = {
   mostrarServicios: boolean;
   mostrarFecha: boolean;
   mostrarHora: boolean;
+  horariosOcupados: string[];
   onCambiar: (campo: keyof Formulario, valor: string) => void;
   onMostrarServicios: (visible: boolean) => void;
   onMostrarFecha: (visible: boolean) => void;
@@ -42,8 +43,30 @@ export function ReservarScreen({
   onMostrarServicios,
   onMostrarFecha,
   onMostrarHora,
+  horariosOcupados,
   onEnviar,
 }: Props) {
+  const seleccionarComprobante = async () => {
+    const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permiso.granted) {
+      Alert.alert('Permiso requerido', 'Autoriza el acceso a tus fotos para adjuntar el comprobante.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.6,
+      base64: true,
+    });
+    if (resultado.canceled || !resultado.assets[0]) return;
+
+    const foto = resultado.assets[0];
+    onCambiar(
+      'comprobante',
+      `data:${foto.mimeType ?? 'image/jpeg'};base64,${foto.base64 ?? ''}`,
+    );
+  };
   const abrirFecha = () => {
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
@@ -60,17 +83,6 @@ export function ReservarScreen({
   };
 
   const abrirHora = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: new Date(2000, 0, 1, 12, 0),
-        mode: 'time',
-        is24Hour: true,
-        onChange: (_evento: DateTimePickerEvent, seleccionada?: Date) => {
-          if (seleccionada) onCambiar('hora', textoHora(seleccionada));
-        },
-      });
-      return;
-    }
     onMostrarHora(true);
   };
 
@@ -120,6 +132,24 @@ export function ReservarScreen({
           <Text style={styles.chevron}>⌄</Text>
         </Pressable>
 
+        <Text style={styles.etiqueta}>Comprobante de pago</Text>
+        {formulario.comprobante ? (
+          <Image
+            source={{ uri: formulario.comprobante }}
+            style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 8 }}
+            resizeMode="cover"
+          />
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.botonSecundario, pressed && styles.botonPresionado]}
+          onPress={() => void seleccionarComprobante()}
+        >
+          <Text style={styles.botonSecundarioTexto}>
+            {formulario.comprobante ? 'Cambiar comprobante' : 'Adjuntar foto del comprobante'}
+          </Text>
+        </Pressable>
+
         <View style={styles.fila}>
           <View style={styles.campoMitad}>
             <Text style={styles.etiqueta}>Día que prefieres</Text>
@@ -142,22 +172,20 @@ export function ReservarScreen({
           </View>
           <View style={styles.campoMitad}>
             <Text style={styles.etiqueta}>Hora aproximada</Text>
-            {Platform.OS === 'web' ? (
-              <TextInput
-                value={formulario.hora}
-                onChangeText={(valor) => onCambiar('hora', valor)}
-                style={styles.input}
-                placeholder="HH:MM"
-                placeholderTextColor="#9a8d82"
-                autoCapitalize="none"
-              />
-            ) : (
-              <Pressable style={[styles.input, styles.selector]} onPress={abrirHora}>
-                <Text style={formulario.hora ? styles.selectorTexto : styles.placeholder}>
-                  {formulario.hora ? horaBonita(formulario.hora) : 'Seleccionar hora'}
-                </Text>
-              </Pressable>
-            )}
+            <Pressable
+              style={[
+                styles.input,
+                styles.selector,
+                !formulario.fecha && styles.botonDeshabilitado,
+              ]}
+              onPress={abrirHora}
+              disabled={!formulario.fecha}
+            >
+              <Text style={formulario.hora ? styles.selectorTexto : styles.placeholder}>
+                {formulario.hora ? horaBonita(formulario.hora) : 'Seleccionar hora'}
+              </Text>
+              <Text style={styles.chevron}>⌄</Text>
+            </Pressable>
           </View>
         </View>
 
@@ -178,19 +206,6 @@ export function ReservarScreen({
             }}
           />
         )}
-        {mostrarHora && Platform.OS === 'ios' && (
-          <DateTimePicker
-            value={new Date(2000, 0, 1, 12, 0)}
-            mode="time"
-            is24Hour
-            display="spinner"
-            onChange={(_evento, seleccionada) => {
-              if (seleccionada) onCambiar('hora', textoHora(seleccionada));
-              onMostrarHora(false);
-            }}
-          />
-        )}
-
         <Text style={styles.etiqueta}>
           Algo que debamos saber <Text style={styles.opcional}>opcional</Text>
         </Text>
@@ -271,6 +286,57 @@ export function ReservarScreen({
                   </Text>
                 </Pressable>
               ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={mostrarHora}
+        transparent
+        animationType="slide"
+        onRequestClose={() => onMostrarHora(false)}
+      >
+        <Pressable
+          style={styles.modalCapa}
+          onPress={() => onMostrarHora(false)}
+        >
+          <View style={styles.modalLista}>
+            <View style={styles.modalCabecera}>
+              <Text style={styles.modalTitulo}>Elige una hora disponible</Text>
+              <Pressable onPress={() => onMostrarHora(false)}>
+                <Text style={styles.modalCerrar}>Cerrar</Text>
+              </Pressable>
+            </View>
+            <ScrollView>
+              {HORARIOS.map((hora) => {
+                const ocupada = horariosOcupados.includes(hora);
+                return (
+                  <Pressable
+                    key={hora}
+                    disabled={ocupada}
+                    style={[
+                      styles.opcion,
+                      formulario.hora === hora && styles.opcionActiva,
+                      ocupada && styles.botonDeshabilitado,
+                    ]}
+                    onPress={() => {
+                      onCambiar('hora', hora);
+                      onMostrarHora(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.opcionTexto,
+                        formulario.hora === hora && styles.opcionTextoActiva,
+                        ocupada && styles.placeholder,
+                      ]}
+                    >
+                      {horaBonita(hora)}{ocupada ? ' · Ocupada' : ''}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
           </View>
         </Pressable>

@@ -33,19 +33,22 @@ const enviar = (datos) =>
   });
 
 test('POST crea una reserva y responde 201', async () => {
+  const comprobante = `data:image/jpeg;base64,${'a'.repeat(150_000)}`;
   const respuesta = await enviar({
     nombre: 'Ana Pérez',
     telefono: '0991234567',
     servicio: 'Limpieza básica',
     fecha: '2099-12-31',
-    hora: '14:30',
+    hora: '14:00',
     notas: 'Prueba de integración',
+    comprobante,
   });
 
   assert.equal(respuesta.status, 201);
 
   const reserva = await respuesta.json();
   assert.equal(reserva.nombre, 'Ana Pérez');
+  assert.equal(reserva.comprobante, comprobante);
   idReserva = reserva.id;
 });
 
@@ -69,6 +72,28 @@ test('POST rechaza una reserva inválida con 400', async () => {
 
   const cuerpo = await respuesta.json();
   assert.ok(cuerpo.errores.length > 0);
+});
+
+test('POST rechaza el mismo horario ocupado', async () => {
+  const respuesta = await enviar({
+    nombre: 'Otro Cliente',
+    telefono: '0997654321',
+    servicio: 'Masaje relajante',
+    fecha: '2099-12-31',
+    hora: '14:00',
+    comprobante: 'data:image/jpeg;base64,otra-prueba',
+  });
+
+  assert.equal(respuesta.status, 409);
+  const cuerpo = await respuesta.json();
+  assert.ok(cuerpo.errores[0].includes('ocupado'));
+});
+
+test('GET informa los horarios ocupados', async () => {
+  const respuesta = await fetch(`${url}/disponibilidad?fecha=2099-12-31`);
+  assert.equal(respuesta.status, 200);
+  const cuerpo = await respuesta.json();
+  assert.deepEqual(cuerpo.ocupados, ['14:00']);
 });
 
 test('PUT cambia el estado de la reserva', async () => {

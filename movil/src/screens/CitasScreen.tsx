@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ESTADOS, NOMBRES_ESTADO } from '../datos';
 import { horaBonita } from '../fechas';
 import type { EstadoReserva, Reserva } from '../types';
@@ -14,6 +14,8 @@ type Props = {
   onCargar: () => void;
   onCambiarEstado: (cita: Reserva, estado: EstadoReserva) => void;
   onEliminar: (cita: Reserva) => void;
+  onCerrarSesion: () => void;
+  soloLectura: boolean;
 };
 
 export function CitasScreen({
@@ -26,6 +28,8 @@ export function CitasScreen({
   onCargar,
   onCambiarEstado,
   onEliminar,
+  onCerrarSesion,
+  soloLectura,
 }: Props) {
   return (
     <>
@@ -33,18 +37,29 @@ export function CitasScreen({
       <View style={e.cabecera}>
         <View style={e.cabeceraTexto}>
           <Text style={e.marca}>AURA STETIC SPA</Text>
-          <Text style={e.titulo}>Citas registradas</Text>
+          <Text style={e.titulo}>
+            {soloLectura ? 'Mis citas' : 'Citas registradas'}
+          </Text>
           <Text style={e.subtitulo}>
             {citasVisibles.length} cita(s) · {citas.length} en total
           </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          style={({ pressed }) => [e.recargar, pressed && e.presionado]}
-          onPress={onCargar}
-        >
-          <Text style={e.recargarTexto}>↻ Actualizar</Text>
-        </Pressable>
+        <View style={e.accionesCabecera}>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [e.recargar, pressed && e.presionado]}
+            onPress={onCargar}
+          >
+            <Text style={e.recargarTexto}>↻ Actualizar</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [e.cerrarSesion, pressed && e.presionado]}
+            onPress={onCerrarSesion}
+          >
+            <Text style={e.cerrarSesionTexto}>Cerrar sesión</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* FILTROS */}
@@ -128,19 +143,32 @@ export function CitasScreen({
                     📅 {cita.fecha || 'Fecha pendiente'}
                     {cita.hora ? ` · ${horaBonita(cita.hora)}` : ''}
                   </Text>
-                  {cita.telefono ? (
+                  {!soloLectura && cita.telefono ? (
                     <Text style={e.citaDetalle}>📞 {cita.telefono}</Text>
                   ) : null}
                 </View>
 
-                {cita.notas ? (
+                        {!soloLectura && cita.notas ? (
                   <View style={e.citaNotaCaja}>
                     <Text style={e.citaNota}>{cita.notas}</Text>
                   </View>
                 ) : null}
 
-                <Text style={e.etiquetaEstado}>CAMBIAR ESTADO</Text>
-                <View style={e.estadosFila}>
+                {!soloLectura && cita.comprobante ? (
+                  <View style={e.comprobanteCaja}>
+                    <Text style={e.etiquetaEstado}>COMPROBANTE DE PAGO</Text>
+                    <Image
+                      source={{ uri: cita.comprobante }}
+                      style={e.comprobanteImagen}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ) : null}
+
+                {!soloLectura ? (
+                  <>
+                    <Text style={e.etiquetaEstado}>CAMBIAR ESTADO</Text>
+                    <View style={e.estadosFila}>
                   {ESTADOS.map((estado) => {
                     const activo = estadoActual === estado;
                     return (
@@ -164,15 +192,17 @@ export function CitasScreen({
                       </Pressable>
                     );
                   })}
-                </View>
+                    </View>
 
-                <Pressable
-                  accessibilityRole="button"
-                  style={({ pressed }) => [e.eliminarBoton, pressed && e.presionado]}
-                  onPress={() => onEliminar(cita)}
-                >
-                  <Text style={e.eliminarTexto}>Eliminar cita</Text>
-                </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      style={({ pressed }) => [e.eliminarBoton, pressed && e.presionado]}
+                      onPress={() => onEliminar(cita)}
+                    >
+                      <Text style={e.eliminarTexto}>Eliminar cita</Text>
+                    </Pressable>
+                  </>
+                ) : null}
               </View>
             </View>
           );
@@ -237,6 +267,7 @@ const e = StyleSheet.create({
     marginBottom: 2,
   },
   subtitulo: { color: COLOR.textoSuave, fontSize: 13 },
+  accionesCabecera: { alignItems: 'flex-end', gap: 8 },
   recargar: {
     backgroundColor: COLOR.principalSuave,
     paddingVertical: 10,
@@ -244,6 +275,11 @@ const e = StyleSheet.create({
     borderRadius: 999,
   },
   recargarTexto: { color: COLOR.principal, fontWeight: '700', fontSize: 13 },
+  cerrarSesion: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  cerrarSesionTexto: { color: '#9a6868', fontSize: 12, fontWeight: '700' },
 
   // Filtros
   filtrosScroll: { flexGrow: 0, marginBottom: 18 },
@@ -353,6 +389,12 @@ const e = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     fontStyle: 'italic',
+  },
+  comprobanteCaja: { marginTop: 4 },
+  comprobanteImagen: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
   },
 
   // Cambiar estado
