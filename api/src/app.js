@@ -4,10 +4,12 @@ const db = require('./db');
 const { validarReserva } = require('./validaciones');
 
 const app = express();
-
+const origenesPermitidos = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((origen) => origen.trim()).filter(Boolean)
+  : ['http://localhost:4200', 'http://localhost:8081', 'http://localhost:8082'];
 
 app.use(cors({
-  origin: ['http://localhost:4200', 'http://localhost:8081', 'http://localhost:8082'],
+  origin: origenesPermitidos,
 }));
 
 app.use(express.json({ limit: '1mb' }));
@@ -103,6 +105,9 @@ app.put('/api/reservas/:id/estado', async (req, res) => {
     console.error('Error al cambiar estado:', error);
     return res.status(500).json({ errores: ['No se pudo cambiar el estado.'] });
   }
+});
+app.get('/api/salud', (req, res) => {
+  res.status(200).json({ estado: 'ok' });
 });
 
 module.exports = app;
