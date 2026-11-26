@@ -219,6 +219,24 @@
 
   textarea.form-control { resize: vertical; min-height: 96px; }
 
+  /* Vista previa del comprobante de pago */
+  .comprobante-vista {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 10px;
+  }
+
+  .comprobante-vista img {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .comprobante-vista .btn-link { color: var(--error); font-size: 0.9rem; }
+
   /* Validación (compatible con Bootstrap y con reservar.js) */
   .form-control.is-invalid, .was-validated .form-control:invalid,
   .form-select.is-invalid, .was-validated .form-select:invalid {

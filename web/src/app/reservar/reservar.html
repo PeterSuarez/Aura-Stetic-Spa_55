@@ -155,19 +155,53 @@
         </div>
 
         <div class="campo col-sm-6">
-          <label class="form-label" for="hora">Hora aproximada</label>
-          <input
-            class="form-control"
+          <label class="form-label" for="hora">Hora</label>
+          <select
+            class="form-select"
             [class.is-invalid]="formulario.controls.hora.touched && formulario.controls.hora.invalid"
-            type="time"
             id="hora"
             formControlName="hora"
             required
           >
+            <option value="" disabled>
+              {{ cargandoHorarios() ? 'Consultando horarios…' : 'Elige una hora' }}
+            </option>
+            @for (hora of horarios; track hora) {
+              <option [value]="hora" [disabled]="estaOcupado(hora)">
+                {{ hora }}{{ estaOcupado(hora) ? ' · ocupado' : '' }}
+              </option>
+            }
+          </select>
           @if (formulario.controls.hora.touched && formulario.controls.hora.invalid) {
-            <div class="invalid-feedback">Por favor elige la hora aproximada.</div>
+            <div class="invalid-feedback">Por favor elige una hora disponible.</div>
           }
         </div>
+      </div>
+
+      <div class="campo mb-3">
+        <label class="form-label" for="comprobante">Comprobante de pago</label>
+        <input
+          #entradaComprobante
+          class="form-control"
+          [class.is-invalid]="formulario.controls.comprobante.touched && (formulario.controls.comprobante.invalid || errorComprobante())"
+          type="file"
+          id="comprobante"
+          accept="image/*"
+          (change)="elegirComprobante($event)"
+        >
+        @if (errorComprobante()) {
+          <div class="invalid-feedback">{{ errorComprobante() }}</div>
+        } @else if (formulario.controls.comprobante.touched && formulario.controls.comprobante.invalid) {
+          <div class="invalid-feedback">Adjunta una foto o captura del comprobante de pago.</div>
+        }
+        @if (formulario.controls.comprobante.value) {
+          <div class="comprobante-vista">
+            <img [src]="formulario.controls.comprobante.value" alt="Vista previa del comprobante de pago">
+            <button type="button" class="btn btn-link p-0" (click)="quitarComprobante(entradaComprobante)">
+              Quitar comprobante
+            </button>
+          </div>
+        }
       </div>
 
       <div class="campo mb-3">

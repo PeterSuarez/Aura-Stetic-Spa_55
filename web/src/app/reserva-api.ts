@@ -25,6 +25,7 @@ export interface NuevaReserva {
   fecha: string;
   hora: string;
   notas: string;
+  comprobante: string; // imagen del comprobante de pago como data URL (base64)
 }
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +39,13 @@ export class ReservaApi {
 
   agregar(reserva: NuevaReserva) {
     return this.http.post<Reserva>(this.url, reserva);
+  }
+
+  // Horarios ya reservados (no cancelados) en una fecha AAAA-MM-DD.
+  disponibilidad(fecha: string) {
+    return this.http.get<{ ocupados: string[] }>(`${this.url}/disponibilidad`, {
+      params: { fecha },
+    });
   }
 
   eliminar(id: number) {
