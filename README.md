@@ -41,6 +41,7 @@ npm start o npm run dev
 # Paso 3 en otro terminar ejecutar los comandos y no se debe cerrar
 # dirección Aura-Stetic-Spa_55\web>
 cd web
+npm install
 ng serve
 
 Después de ejecutar ng serve tiene que dar por ejemplo un link como http://localhost:4200/ ese link copiarlo y pegarlo en el buscador siempre va a ejecutar en el puerto 4200
