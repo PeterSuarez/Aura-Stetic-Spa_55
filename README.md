@@ -24,6 +24,7 @@ npx expo start --web
 Usuario: admin
 Contraseña: aura2026
 
+por favor no subir fotos pesadas
 
 
 
