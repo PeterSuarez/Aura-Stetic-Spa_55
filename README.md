@@ -14,13 +14,13 @@ cd movil
 npm install
 npx expo start -c o expo start
 # Para simular en la web
-npx expo start --web 
+npx expo start --web
 
-# Para conbrobar los datos guardados 
+# Para conbrobar los datos guardados
 **API pública:** https://aura-stetic-spa-55.onrender.com/api/reservas
 **Salud:** https://aura-stetic-spa-55.onrender.com/api/salud → `{"estado":"ok"}`
 
-# Para visualizar los datos en aplicacion en citas 
+# Para visualizar los datos en aplicacion en citas
 Usuario: admin
 Contraseña: aura2026
 
@@ -30,8 +30,8 @@ Contraseña: aura2026
 
 
 
-# Opcional 
-# Paso 2 en un terminal ejecutar los comandos y no se debe cerrar 
+# Opcional
+# Paso 2 en un terminal ejecutar los comandos y no se debe cerrar
 # dirección Aura-Stetic-Spa_55\api>
 cd api
 npm test
