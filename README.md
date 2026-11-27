@@ -57,3 +57,18 @@ Genera un link como Web: http://localhost:8081 para simular en un celular se sim
 
 
 
+
+$img = [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\Users\PETER\Pictures\comprobante.jpg"))
+
+$body = @{
+    nombre      = "Maria"
+    telefono    = "0999000000"
+    servicio    = "Facial renueva tu luminosidad"
+    fecha       = "2026-11-28"
+    hora        = "15:00"
+    notas       = $null
+    comprobante = "data:image/jpeg;base64,$img"
+    estado      = "pendiente"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri https://aura-stetic-spa-55.onrender.com/api/reservas -Method Post -ContentType 'application/json' -Body $body
